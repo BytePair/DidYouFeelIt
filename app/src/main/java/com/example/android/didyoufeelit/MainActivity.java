@@ -19,15 +19,16 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.TextView;
+import android.widget.Toast;
 
 /**
  * Displays the perceived strength of a single earthquake event based on responses from people who
  * felt the earthquake.
- */
+ **/
 public class MainActivity extends AppCompatActivity {
 
 
-    /** URL for earthquake data from the USGS dataset */
+    /** URL for earthquake data from the USGS dataset **/
     private static final String USGS_REQUEST_URL =
             "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2016-01-01&endtime=2016-05-02&minfelt=50&minmagnitude=5";
 
@@ -46,14 +47,43 @@ public class MainActivity extends AppCompatActivity {
     /** Create Async Class to fetch earthquake data **/
     private class EarthquakeAsyncTask extends AsyncTask<String, Void, Event> {
 
+        /**
+         * This method is invoked (or called) on a background thread, so we can perform
+         * long-running operations like making a network request.
+         *
+         * It is NOT okay to update the UI from a background thread, so we just return an
+         * {@link Event} object as the result.
+         **/
         @Override
         protected Event doInBackground(String... urlString) {
+
+            // Make sure we got at least 1 string
+            if (urlString.length < 1 || urlString[0] == null) {
+                // Have to return null because onPostExecute still expects an object
+                return null;
+            }
+
             // Perform the HTTP request for earthquake data and process the response.
             return Utils.fetchEarthquakeData(urlString[0]);
         }
 
+        /**
+         * This method is invoked on the main UI thread after the background work has been
+         * completed.
+         *
+         * It IS okay to modify the UI within this method. We take the {@link Event} object
+         * (which was returned from the doInBackground() method) and update the views on the screen.
+         **/
         @Override
         protected void onPostExecute(Event earthquake) {
+
+            // If event is null, do not attempt to update ui
+            if (earthquake == null) {
+                // just inform user via toast we couldn't find anything
+                Toast.makeText(getApplicationContext(), "No earthquake data found", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             // Update the information displayed to the user
             updateUi(earthquake);
         }
@@ -62,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Update the UI with the given earthquake information.
-     */
+     **/
     private void updateUi(Event earthquake) {
         TextView titleTextView = (TextView) findViewById(R.id.title);
         titleTextView.setText(earthquake.title);
