@@ -15,6 +15,7 @@
  */
 package com.example.android.didyoufeelit;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.TextView;
@@ -25,21 +26,39 @@ import android.widget.TextView;
  */
 public class MainActivity extends AppCompatActivity {
 
+
     /** URL for earthquake data from the USGS dataset */
     private static final String USGS_REQUEST_URL =
             "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2016-01-01&endtime=2016-05-02&minfelt=50&minmagnitude=5";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Perform the HTTP request for earthquake data and process the response.
-        Event earthquake = Utils.fetchEarthquakeData(USGS_REQUEST_URL);
-
-        // Update the information displayed to the user.
-        updateUi(earthquake);
+        // Create new earthquake task to fetch data in background
+        EarthquakeAsyncTask earthquakeAsyncTask = new EarthquakeAsyncTask();
+        earthquakeAsyncTask.execute(USGS_REQUEST_URL);
     }
+
+
+    /** Create Async Class to fetch earthquake data **/
+    private class EarthquakeAsyncTask extends AsyncTask<String, Void, Event> {
+
+        @Override
+        protected Event doInBackground(String... urlString) {
+            // Perform the HTTP request for earthquake data and process the response.
+            return Utils.fetchEarthquakeData(urlString[0]);
+        }
+
+        @Override
+        protected void onPostExecute(Event earthquake) {
+            // Update the information displayed to the user
+            updateUi(earthquake);
+        }
+    }
+
 
     /**
      * Update the UI with the given earthquake information.
